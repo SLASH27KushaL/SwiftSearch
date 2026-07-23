@@ -8,11 +8,11 @@ import (
 	"syscall"
 	"time"
 
-	"moogle-go/pkg/models"
 	"moogle-go/services/spider/internal/config"
 	"moogle-go/services/spider/internal/crawler"
 	"moogle-go/services/spider/internal/parser"
 	"moogle-go/services/spider/internal/storage"
+	"moogle-go/services/spider/pkg/models"
 )
 
 func main() {
@@ -86,7 +86,7 @@ func main() {
 		}
 	}()
 
-	// 8. Start Crawling Routine (blocks until engine shuts down)
+	// 8. Start Crawling Routine
 	log.Printf(" Starting engine with %d workers (Max Depth: %d)...", cfg.WorkerCount, cfg.MaxDepth)
 	engine.Start(ctx)
 

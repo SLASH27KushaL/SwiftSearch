@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  # 1. Redis for URL Deduplication
+  redis:
+    image: redis:7-alpine
+    container_name: moogle-redis
+    ports:
+      - "6379:6379"
+
+  # 2. MongoDB for Document Storage
+  mongo:
+    image: mongo:6
+    container_name: moogle-mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+
+  # 3. Your Web Spider
+  spider:
+    image: moogle-spider:latest
+    container_name: moogle-spider
+    depends_on:
+      - redis
+      - mongo
+    environment:
+      # These variables tell the spider how to connect to the databases inside the Docker network
+      - REDIS_ADDR=redis:6379
+      - MONGO_URI=mongodb://mongo:27017
+      - DB_NAME=moogle_db
+      - COLLECTION_NAME=raw_pages
+      - WORKER_COUNT=5       # Keep it small for local testing
+      - MAX_DEPTH=2          # Don't crawl the whole internet just yet!
+      - CRAWL_DELAY_MS=1000  # 1 second delay between requests
+
+volumes:
+  mongo_data:
