@@ -13,7 +13,7 @@ services:
     image: mongo:6
     container_name: moogle-mongo
     ports:
-      - "27017:27017"
+      - "27018:27017"
     volumes:
       - mongo_data:/data/db
 
@@ -30,9 +30,9 @@ services:
       - MONGO_URI=mongodb://mongo:27017
       - DB_NAME=moogle_db
       - COLLECTION_NAME=raw_pages
-      - WORKER_COUNT=5       # Keep it small for local testing
-      - MAX_DEPTH=2          # Don't crawl the whole internet just yet!
-      - CRAWL_DELAY_MS=1000  # 1 second delay between requests
+      - WORKER_COUNT=50       # Keep it small for local testing
+      - MAX_DEPTH=3          # Don't crawl the whole internet just yet!
+      - CRAWL_DELAY_MS=100  # 1 second delay between requests
 
 volumes:
   mongo_data:
