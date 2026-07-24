@@ -12,13 +12,11 @@ import (
 	"moogle-go/services/indexer/pkg/models"
 )
 
-// IndexWriter handles saving the inverted index to MongoDB.
 type IndexWriter struct {
 	client     *mongo.Client
 	collection *mongo.Collection
 }
 
-// NewIndexWriter connects to MongoDB, ensures indexes, and returns a writer instance.
 func NewIndexWriter(ctx context.Context, uri, dbName, collectionName string) (*IndexWriter, error) {
 	clientOptions := options.Client().ApplyURI(uri)
 	client, err := mongo.Connect(clientOptions)
@@ -38,7 +36,6 @@ func NewIndexWriter(ctx context.Context, uri, dbName, collectionName string) (*I
 		collection: collection,
 	}
 
-	// Create a unique index on the "term" field for fast lookups
 	if err := writer.createIndexes(ctx); err != nil {
 		return nil, fmt.Errorf("failed to create writer indexes: %w", err)
 	}
@@ -46,7 +43,6 @@ func NewIndexWriter(ctx context.Context, uri, dbName, collectionName string) (*I
 	return writer, nil
 }
 
-// createIndexes ensures that each word (term) is completely unique in the database.
 func (i *IndexWriter) createIndexes(ctx context.Context) error {
 	indexModel := mongo.IndexModel{
 		Keys:    bson.D{{Key: "term", Value: 1}},
@@ -56,7 +52,6 @@ func (i *IndexWriter) createIndexes(ctx context.Context) error {
 	return err
 }
 
-// BulkUpsert takes a batch of IndexEntries and pushes them into the inverted index.
 func (i *IndexWriter) BulkUpsert(ctx context.Context, entries []models.IndexEntry) error {
 	if len(entries) == 0 {
 		return nil
@@ -66,9 +61,9 @@ func (i *IndexWriter) BulkUpsert(ctx context.Context, entries []models.IndexEntr
 
 	for _, entry := range entries {
 		filter := bson.M{"term": entry.Term}
-		// $push appends the document match (URL, Title, TF) into the term's "matches" array
+		// FIX: We now grab the first (and only) match from the slice to push to the DB
 		update := bson.M{
-			"$push": bson.M{"matches": entry.DocumentMatch},
+			"$push": bson.M{"matches": entry.Matches[0]},
 		}
 
 		op := mongo.NewUpdateOneModel().
@@ -79,7 +74,6 @@ func (i *IndexWriter) BulkUpsert(ctx context.Context, entries []models.IndexEntr
 		operations = append(operations, op)
 	}
 
-	// Execute all writes in a single network round-trip for massive performance gains
 	bulkOptions := options.BulkWrite().SetOrdered(false)
 	_, err := i.collection.BulkWrite(ctx, operations, bulkOptions)
 	if err != nil {
@@ -89,7 +83,6 @@ func (i *IndexWriter) BulkUpsert(ctx context.Context, entries []models.IndexEntr
 	return nil
 }
 
-// Close disconnects the MongoDB client cleanly.
 func (i *IndexWriter) Close(ctx context.Context) error {
 	return i.client.Disconnect(ctx)
 }

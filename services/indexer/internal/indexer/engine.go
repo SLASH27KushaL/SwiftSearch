@@ -44,12 +44,15 @@ func (e *Engine) Run(ctx context.Context) error {
 			tfMap := CalculateTF(filteredTokens)
 
 			for term, tf := range tfMap {
+				// FIX: We now properly use the 'Matches' array with our single match
 				entry := models.IndexEntry{
 					Term: term,
-					DocumentMatch: models.DocumentMatch{
-						URL:   page.URL,
-						Title: page.Title,
-						TF:    tf,
+					Matches: []models.DocumentMatch{
+						{
+							URL:   page.URL,
+							Title: page.Title,
+							TF:    tf,
+						},
 					},
 				}
 				indexBatch = append(indexBatch, entry)
