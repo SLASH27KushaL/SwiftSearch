@@ -9,7 +9,8 @@ interface SearchResultsProps {
 export default function SearchResults({ data, hasSearched }: SearchResultsProps) {
   if (!hasSearched) return null;
 
-  if (!data || data.results.length === 0) {
+  // Added safety check for !data.results here
+  if (!data || !data.results || data.results.length === 0) {
     return (
       <div className="w-full max-w-2xl mt-10 p-8 text-center rounded-2xl bg-zinc-900/40 border border-zinc-800/80">
         <p className="text-zinc-300 font-medium">No results found.</p>
