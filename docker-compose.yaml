@@ -1,0 +1,95 @@
+version: '3.8'
+
+services:
+  # 1. Redis Queue & Bloom Filter
+  redis:
+    image: redis:7-alpine
+    container_name: moogle-redis
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+
+  # 2. MongoDB Document Store
+  mongo:
+    image: mongo:6
+    container_name: moogle-mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    restart: unless-stopped
+
+  # 3. Distributed Web Spider
+  spider:
+    build:
+      context: ./services/spider
+      dockerfile: Dockerfile
+    image: moogle-spider:latest
+    container_name: moogle-spider
+    depends_on:
+      - redis
+      - mongo
+    environment:
+      - REDIS_ADDR=redis:6379
+      - MONGO_URI=mongodb://mongo:27017
+      - DB_NAME=swiftsearch
+      - COLLECTION_NAME=pages
+      - WORKER_COUNT=10
+      - MAX_DEPTH=3
+      - CRAWL_DELAY_MS=500
+    restart: on-failure
+
+  # 4. Live Search API Server
+  search:
+    build:
+      context: ./services/search
+      dockerfile: Dockerfile
+    image: moogle-search:latest
+    container_name: moogle-search
+    ports:
+      - "8080:8080"
+    depends_on:
+      - mongo
+      - redis
+    environment:
+      - REDIS_ADDR=redis:6379
+      - MONGO_URI=mongodb://mongo:27017
+      - DB_NAME=swiftsearch
+      - PORT=8080
+    restart: unless-stopped
+
+  # 5. PageRank Authority Scorer (Batch Job)
+  pagerank:
+    build:
+      context: ./services/pagerank
+      dockerfile: Dockerfile
+    image: moogle-pagerank:latest
+    container_name: moogle-pagerank
+    depends_on:
+      - mongo
+    environment:
+      - MONGO_URI=mongodb://mongo:27017
+      - DB_NAME=swiftsearch
+      - COLLECTION_NAME=pages
+    # Set to "no" so it runs once and exits, rather than looping infinitely
+    restart: "no"
+
+  # 6. Inverted Index Builder (Batch Job)
+  indexer:
+    build:
+      context: ./services/indexer
+      dockerfile: Dockerfile
+    image: moogle-indexer:latest
+    container_name: moogle-indexer
+    depends_on:
+      - mongo
+    environment:
+      - MONGO_URI=mongodb://mongo:27017
+      - DB_NAME=swiftsearch
+      - RAW_COLLECTION=pages
+      - INDEX_COLLECTION=index
+    # Set to "no" so it runs once and exits
+    restart: "no"
+
+volumes:
+  mongo_data:

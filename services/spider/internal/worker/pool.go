@@ -46,35 +46,39 @@ func (p *Pool) worker(id int, wg *sync.WaitGroup) {
 			continue
 		}
 
-		// 2. Check robots.txt compliance BEFORE doing anything else
+		// 2. Check robots.txt compliance
 		if !p.Robots.IsAllowed(rawURL) {
-			fmt.Printf("[Worker %d] Blocked by robots.txt: %s\n", id, rawURL)
-			continue // Drop the URL and move on
+			continue
 		}
 
 		// 3. Enforce Politeness (Delay)
 		domain := frontier.ExtractDomain(rawURL)
 		if !p.Politeness.RequestAccess(domain) {
-			p.Queue.Push(rawURL) // Push back for later
+			p.Queue.Push(rawURL)
 			time.Sleep(100 * time.Millisecond)
 			continue
 		}
 
-		fmt.Printf("[Worker %d] Crawling: %s\n", id, rawURL)
+		fmt.Printf("[Worker %d] Attempting Fetch: %s\n", id, rawURL)
 
 		// 4. Fetch HTML and parse links
 		page, err := parser.FetchAndParse(rawURL)
 		if err != nil {
+			// 💡 THIS WILL SHOW US IF FETCHING FAILED
+			log.Printf("[Worker %d] ❌ Fetch/Parse Failed (%s): %v\n", id, rawURL, err)
 			continue
 		}
 
 		// 5. Save raw HTML to MongoDB
 		err = p.Store.SavePage(page.URL, page.HTML)
 		if err != nil {
-			log.Println("Mongo Error:", err)
+			// 💡 THIS WILL SHOW US IF MONGO REJECTED THE WRITE
+			log.Printf("[Worker %d] ❌ Mongo Save Error: %v\n", id, err)
+		} else {
+			log.Printf("[Worker %d] ✅ SUCCESSFULLY SAVED TO MONGO: %s\n", id, page.URL)
 		}
 
-		// 6. Check new links against Bloom Filter and queue unvisited ones
+		// 6. Push new links to queue
 		for _, link := range page.Links {
 			visited, _ := p.Filter.CheckAndAdd(link)
 			if !visited {

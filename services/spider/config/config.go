@@ -10,7 +10,8 @@ type Config struct {
 
 func LoadConfig() *Config {
 	return &Config{
-		RedisURI:    getEnv("REDIS_URI", "localhost:6379"),
+		// CHANGED: "REDIS_URI" is now "REDIS_ADDR" to match docker-compose
+		RedisURI:    getEnv("REDIS_ADDR", "localhost:6379"),
 		MongoURI:    getEnv("MONGO_URI", "mongodb://localhost:27017"),
 		WorkerCount: 10, // Number of concurrent goroutines per node
 	}

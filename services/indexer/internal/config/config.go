@@ -15,10 +15,11 @@ type Config struct {
 
 func LoadConfig() *Config {
 	return &Config{
-		MongoURI:         getEnv("MONGO_URI", "mongodb://localhost:27018"),
-		DBName:           getEnv("DB_NAME", "moogle_db"),
-		SourceCollection: getEnv("SOURCE_COLLECTION", "raw_pages"),
-		IndexCollection:  getEnv("INDEX_COLLECTION", "inverted_index"),
+		MongoURI:         getEnv("MONGO_URI", "mongodb://localhost:27017"),
+		DBName:           getEnv("DB_NAME", "swiftsearch"),
+		// CHANGED: Now perfectly matches your docker-compose.yml
+		SourceCollection: getEnv("RAW_COLLECTION", "pages"),
+		IndexCollection:  getEnv("INDEX_COLLECTION", "index"),
 		BatchSize:        getEnvAsInt("BATCH_SIZE", 100),
 	}
 }

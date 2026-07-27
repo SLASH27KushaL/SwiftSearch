@@ -16,9 +16,10 @@ type Config struct {
 
 func LoadConfig() *Config {
 	return &Config{
-		MongoURI:         getEnv("MONGO_URI", "mongodb://localhost:27018"),
-		DBName:           getEnv("DB_NAME", "moogle_db"),
-		SourceCollection: getEnv("SOURCE_COLLECTION", "raw_pages"),
+		MongoURI:         getEnv("MONGO_URI", "mongodb://localhost:27017"),
+		DBName:           getEnv("DB_NAME", "swiftsearch"),
+		// CHANGED: Now matches COLLECTION_NAME from your docker-compose.yml
+		SourceCollection: getEnv("COLLECTION_NAME", "pages"),
 		OutputCollection: getEnv("OUTPUT_COLLECTION", "pagerank_scores"),
 		DampingFactor:    getEnvAsFloat("DAMPING_FACTOR", 0.85),
 		MaxIterations:    getEnvAsInt("MAX_ITERATIONS", 25),

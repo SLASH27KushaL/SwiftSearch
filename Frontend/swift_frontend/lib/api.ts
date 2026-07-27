@@ -19,7 +19,12 @@ export async function fetchSearchResults(query: string): Promise<SearchResponse>
   });
 
   if (!res.ok) {
-    throw new Error("Failed to fetch search results from backend");
+    // 🚨 GRAB THE REAL ERROR FROM THE BACKEND
+    const errorText = await res.text();
+    console.error(`🚨 BACKEND CRASHED! Status: ${res.status} | Message: ${errorText}`);
+
+    // Throw it so Next.js shows it on your screen instead of the generic message
+    throw new Error(`Backend Error ${res.status}: ${errorText}`);
   }
 
   return res.json();
