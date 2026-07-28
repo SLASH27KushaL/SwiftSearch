@@ -27,7 +27,7 @@ func (r *Ranker) ExecuteSearch(ctx context.Context, query string) ([]models.Sear
 	if len(tokens) == 0 {
 		return []models.SearchResult{}, nil
 	}
-
+log.Printf("Query: %s | Tokens: %v", query, tokens)
 	// 1. Get Relevance (TF) and Titles
 	tfScores, titles, err := r.reader.FetchTFIDF(ctx, tokens)
 	if err != nil {

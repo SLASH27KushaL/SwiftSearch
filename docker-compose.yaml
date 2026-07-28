@@ -56,6 +56,8 @@ services:
       - MONGO_URI=mongodb://mongo:27017
       - DB_NAME=swiftsearch
       - PORT=8080
+      - INDEX_COLLECTION=index            
+      - RANK_COLLECTION=pagerank_scores
     restart: unless-stopped
 
   # 5. PageRank Authority Scorer (Batch Job)

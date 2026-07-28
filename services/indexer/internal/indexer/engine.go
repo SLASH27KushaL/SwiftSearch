@@ -3,6 +3,8 @@ package indexer
 import (
 	"context"
 	"log"
+	"regexp"  // 👈 ADD THIS
+	"strings" // 👈 ADD THIS
 
 	"moogle-go/services/indexer/internal/store"
 	"moogle-go/services/indexer/internal/tokenizer"
@@ -24,6 +26,9 @@ func NewEngine(reader *store.MongoReader, writer *store.IndexWriter, batchSize i
 }
 
 func (e *Engine) Run(ctx context.Context) error {
+	// 🚨 Regex to find the title tag inside the raw HTML
+	titleRegex := regexp.MustCompile(`(?i)<title[^>]*>(.*?)</title>`)
+
 	for {
 		pages, err := e.reader.GetNextBatch(ctx, e.batchSize)
 		if err != nil {
@@ -39,18 +44,30 @@ func (e *Engine) Run(ctx context.Context) error {
 		var indexBatch []models.IndexEntry
 
 		for _, page := range pages {
+			// 🚨 EXTRACT THE TITLE FROM THE HTML 🚨
+			docTitle := page.Title
+			if docTitle == "" {
+				matches := titleRegex.FindStringSubmatch(page.TextContent)
+				if len(matches) > 1 {
+					docTitle = strings.TrimSpace(matches[1])
+				}
+				// Fallback to URL if the webpage literally has no title
+				if docTitle == "" {
+					docTitle = page.URL
+				}
+			}
+
 			tokens := tokenizer.CleanAndTokenize(page.TextContent)
 			filteredTokens := tokenizer.RemoveStopwords(tokens)
 			tfMap := CalculateTF(filteredTokens)
 
 			for term, tf := range tfMap {
-				// FIX: We now properly use the 'Matches' array with our single match
 				entry := models.IndexEntry{
 					Term: term,
 					Matches: []models.DocumentMatch{
 						{
 							URL:   page.URL,
-							Title: page.Title,
+							Title: docTitle, // 👈 USING THE NEW EXTRACTED TITLE
 							TF:    tf,
 						},
 					},
@@ -63,8 +80,8 @@ func (e *Engine) Run(ctx context.Context) error {
 			}
 		}
 
+		// (Keep your existing chunking logic here)
 		if len(indexBatch) > 0 {
-			// Chunk the massive array into batches of 500 to prevent MongoDB EOF crashes
 			chunkSize := 500
 			for i := 0; i < len(indexBatch); i += chunkSize {
 				end := i + chunkSize
