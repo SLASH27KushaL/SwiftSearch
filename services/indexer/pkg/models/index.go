@@ -1,12 +1,13 @@
+
+
 package models
 
 type RawPage struct {
-	URL         string `bson:"url"`
-	Title       string `bson:"title"`
-	TextContent string `bson:"text_content"`
-	Indexed     bool   `bson:"indexed,omitempty"`
+  URL         string `bson:"url"`
+  Title       string `bson:"title"`
+  TextContent string `bson:"html"` 
+  Indexed     bool   `bson:"indexed,omitempty"`
 }
-
 type DocumentMatch struct {
 	URL   string  `bson:"url" json:"url"`
 	Title string  `bson:"title" json:"title"`

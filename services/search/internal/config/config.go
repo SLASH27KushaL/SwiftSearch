@@ -27,7 +27,7 @@ func LoadConfig() *Config {
 		IndexCollection: getEnv("INDEX_COLLECTION", "index"),
 		RankCollection:  getEnv("RANK_COLLECTION", "pagerank_scores"),
 		// CHANGED: 127.0.0.1 bypasses the Windows [::1] IPv6 bug
-		RedisURI:        getEnv("REDIS_URI", "127.0.0.1:6380"),
+		RedisURI:        getEnv("REDIS_URI", "127.0.0.1:6379"),
 		AlphaWeight:     getEnvAsFloat("ALPHA_WEIGHT", 0.6), // Default 60% text relevance
 		BetaWeight:      getEnvAsFloat("BETA_WEIGHT", 0.4),  // Default 40% graph authority
 	}

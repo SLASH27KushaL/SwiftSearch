@@ -64,9 +64,19 @@ func (e *Engine) Run(ctx context.Context) error {
 		}
 
 		if len(indexBatch) > 0 {
-			if err := e.writer.BulkUpsert(ctx, indexBatch); err != nil {
-				log.Printf("Failed to write index batch to database: %v", err)
-				return err
+			// Chunk the massive array into batches of 500 to prevent MongoDB EOF crashes
+			chunkSize := 500
+			for i := 0; i < len(indexBatch); i += chunkSize {
+				end := i + chunkSize
+				if end > len(indexBatch) {
+					end = len(indexBatch)
+				}
+
+				chunk := indexBatch[i:end]
+				if err := e.writer.BulkUpsert(ctx, chunk); err != nil {
+					log.Printf("Failed to write index chunk to database: %v", err)
+					return err
+				}
 			}
 		}
 	}

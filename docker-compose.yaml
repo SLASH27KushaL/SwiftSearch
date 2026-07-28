@@ -14,7 +14,7 @@ services:
     image: mongo:6
     container_name: moogle-mongo
     ports:
-      - "27017:27017"
+      - "27018:27017"
     volumes:
       - mongo_data:/data/db
     restart: unless-stopped
